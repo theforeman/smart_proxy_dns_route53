@@ -13,7 +13,7 @@ This plugin is compatible with Smart Proxy 1.10 or higher.
 
 To enable this DNS provider, edit `/etc/foreman-proxy/settings.d/dns.yml` and set:
 
-   :use_provider: dns_route53
+    :use_provider: dns_route53
 
 You will need an active Amazon Web Services account and to create a new IAM account with access to manage Route53 for the Smart Proxy plugin to work.
 
