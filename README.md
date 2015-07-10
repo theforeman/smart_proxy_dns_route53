@@ -28,7 +28,7 @@ Fork and send a Pull Request. Thanks!
 
 ## Copyright
 
-Copyright (c) 2015 Sol Cates, Red Hat Inc. and other contributors
+Copyright (c) 2015 Daniel Maraio, Sol Cates, Red Hat Inc. and other contributors
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

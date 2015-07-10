@@ -6,7 +6,7 @@ Gem::Specification.new do |s|
   s.version     = Proxy::Dns::Route53::VERSION
   s.date        = Date.today.to_s
   s.license     = 'GPLv3'
-  s.authors     = ['Sol Cates', 'Dominic Cleal']
+  s.authors     = ['Foreman developers']
   s.email       = ['foreman-dev@googlegroups.com']
   s.homepage    = 'https://github.com/theforeman/smart_proxy_dns_route53'
 
