@@ -10,8 +10,8 @@ Gem::Specification.new do |s|
   s.email       = ['foreman-dev@googlegroups.com']
   s.homepage    = 'https://github.com/theforeman/smart_proxy_dns_route53'
 
-  s.summary     = "Route53 DNS provider plugin for Foreman's smart proxy"
-  s.description = "Route53 DNS provider plugin for Foreman's smart proxy"
+  s.summary     = "Route 53 DNS provider plugin for Foreman's smart proxy"
+  s.description = "Route 53 DNS provider plugin for Foreman's smart proxy"
 
   s.files       = Dir['{config,lib,bundler.d}/**/*'] + ['README.md', 'LICENSE']
   s.test_files  = Dir['test/**/*']

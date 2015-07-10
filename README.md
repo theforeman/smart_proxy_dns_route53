@@ -1,6 +1,6 @@
-# SmartProxyDnsRoute53
+# Route 53 smart proxy plugin
 
-This plugin adds a new DNS provider for managing records in Amazon's Route53 service.
+This plugin adds a new DNS provider for managing records in Amazon's Route 53 service.
 
 ## Installation
 
@@ -15,7 +15,7 @@ To enable this DNS provider, edit `/etc/foreman-proxy/settings.d/dns.yml` and se
 
     :use_provider: dns_route53
 
-You will need an active Amazon Web Services account and to create a new IAM account with access to manage Route53 for the Smart Proxy plugin to work.
+You will need an active Amazon Web Services account and to create a new IAM account with access to manage Route 53 for the Smart Proxy plugin to work.
 
 Configuration options for this plugin are in `/etc/foreman-proxy/settings.d/dns_route53.yml` and include:
 
