@@ -1,4 +1,5 @@
 require 'dns/dns'
+require 'dns_common/dns_common'
 require 'resolv'
 require 'route53'
 
@@ -9,90 +10,70 @@ module Proxy::Dns::Route53
 
     attr_reader :aws_access_key, :aws_secret_key
 
-    def self.record(attrs = {})
-      new(attrs.merge(
-        :aws_access_key => ::Proxy::Dns::Route53::Plugin.settings.aws_access_key,
-        :aws_secret_key => ::Proxy::Dns::Route53::Plugin.settings.aws_secret_key
-      ))
+    def initialize(a_server = nil, a_ttl = nil)
+      @aws_access_key = Proxy::Dns::Route53::Plugin.settings.aws_access_key
+      @aws_secret_key = Proxy::Dns::Route53::Plugin.settings.aws_secret_key
+      super(a_server, a_ttl || ::Proxy::Dns::Plugin.settings.dns_ttl)
     end
 
-    def initialize options = {}
-      @aws_access_key = options[:aws_access_key]
-      @aws_secret_key = options[:aws_secret_key]
-      raise "dns_route53 provider needs AWS access and secret key options" unless aws_access_key && aws_secret_key
-      super(options)
-    end
-
-    def create
-      case @type
-        when "A"
-          if ip = dns_find(@fqdn)
-            raise(Proxy::Dns::Collision, "#{@fqdn} is already used by #{ip}") unless ip == @value
-          else
-            zone = get_zone(@fqdn)
-            new_record = Route53::DNSRecord.new(@fqdn, 'A', @ttl, [@value], zone)
-            resp = new_record.create
-            raise "AWS Response Error: #{resp}" if resp.error?
-            true
-          end
-        when "PTR"
-          if name = dns_find(@value)
-            raise(Proxy::Dns::Collision, "#{@value} is already used by #{name}") unless name == @fqdn
-          else
-            zone = get_zone(@value)
-            new_record = Route53::DNSRecord.new(@value, 'PTR', @ttl, [@fqdn], zone)
-            resp = new_record.create
-            raise "AWS Response Error: #{resp}" if resp.error?
-            true
-          end
+    def create_a_record(fqdn, ip)
+      if found = dns_find(fqdn)
+        raise(Proxy::Dns::Collision, "#{fqdn} is already used by #{ip}") unless found == ip
+      else
+        zone = get_zone(fqdn)
+        new_record = Route53::DNSRecord.new(fqdn, 'A', ttl, [ip], zone)
+        resp = new_record.create
+        raise "AWS Response Error: #{resp}" if resp.error?
+        true
       end
     end
 
-    def remove
-      case @type
-        when "A"
-          zone = get_zone(@fqdn)
-          recordset = zone.get_records
-          recordset.each do |rec|
-            if rec.name == @fqdn + '.'
-              resp = rec.delete
-              raise "AWS Response Error: #{resp}" if resp.error?
-              return true
-            end
-          end
-          raise Proxy::Dns::NotFound, "Could not find forward record #{@fqdn}"
-        when "PTR"
-          zone = get_zone(@value)
-          recordset = zone.get_records
-          recordset.each do |rec|
-            if rec.name == @value + '.'
-              resp = rec.delete
-              raise "AWS Response Error: #{resp}" if resp.error?
-              return true
-            end
-          end
-          raise Proxy::Dns::NotFound, "Could not find reverse record #{@value}"
+    def create_ptr_record(fqdn, ip)
+      if found = dns_find(ip)
+        raise(Proxy::Dns::Collision, "#{ip} is already used by #{found}") unless found == fqdn
+      else
+        zone = get_zone(ip)
+        new_record = Route53::DNSRecord.new(ip, 'PTR', ttl, [fqdn], zone)
+        resp = new_record.create
+        raise "AWS Response Error: #{resp}" if resp.error?
+        true
       end
+    end
+
+    def remove_a_record(fqdn)
+      zone = get_zone(fqdn)
+      recordset = zone.get_records
+      recordset.each do |rec|
+        if rec.name == fqdn + '.'
+          resp = rec.delete
+          raise "AWS Response Error: #{resp}" if resp.error?
+          return true
+        end
+      end
+      raise Proxy::Dns::NotFound, "Could not find forward record #{fqdn}"
+    end
+
+    def remove_ptr_record(ip)
+      zone = get_zone(ip)
+      recordset = zone.get_records
+      recordset.each do |rec|
+        if rec.name == ip + '.'
+          resp = rec.delete
+          raise "AWS Response Error: #{resp}" if resp.error?
+          return true
+        end
+      end
+      raise Proxy::Dns::NotFound, "Could not find reverse record #{ip}"
     end
 
     private
 
     def conn
-      @conn ||= Route53::Connection.new(@aws_access_key, @aws_secret_key)
+      @conn ||= Route53::Connection.new(aws_access_key, aws_secret_key)
     end
 
     def resolver
       @resolver ||= Resolv::DNS.new
-    end
-
-    def dns_find key
-      if match = key.match(/(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/)
-        resolver.getname(match[1..4].reverse.join(".")).to_s
-      else
-        resolver.getaddress(key).to_s
-      end
-    rescue Resolv::ResolvError
-      false
     end
 
     def get_zone(fqdn)
