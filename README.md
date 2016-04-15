@@ -7,7 +7,12 @@ This plugin adds a new DNS provider for managing records in Amazon's Route 53 se
 See [How_to_Install_a_Smart-Proxy_Plugin](http://projects.theforeman.org/projects/foreman/wiki/How_to_Install_a_Smart-Proxy_Plugin)
 for how to install Smart Proxy plugins
 
-This plugin is compatible with Smart Proxy 1.10 or higher.
+## Compatibility
+
+| Smart Proxy Version | Plugin Version |
+| ------------------- | --------------:|
+| >= 1.10, < 1.11     | ~> 1.0         |
+| >= 1.11             | ~> 2.0         |
 
 ## Configuration
 
