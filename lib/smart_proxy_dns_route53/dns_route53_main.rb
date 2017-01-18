@@ -53,9 +53,14 @@ module Proxy::Dns::Route53
       @resolver ||= Resolv::DNS.new
     end
 
-    def get_zone(fqdn)
-      domain = fqdn.split('.', 2).last
-      conn.get_zones(domain)[0]
+    def get_zone(name)
+      zones = conn.get_zones
+      name_arr = name.split('.')
+      (1 ... name_arr.size).each do |i|
+        search_domain = name_arr.last(name_arr.size - i).join('.') + "."
+        zone_select = zones.select { |z| z.name == search_domain }
+        return zone_select.first if zone_select.any?
+      end
     end
   end
 end
