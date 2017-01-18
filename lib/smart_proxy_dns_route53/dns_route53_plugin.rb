@@ -5,7 +5,7 @@ module Proxy::Dns::Route53
   class Plugin < ::Proxy::Provider
     plugin :dns_route53, ::Proxy::Dns::Route53::VERSION
 
-    requires :dns, '>= 1.13'
+    requires :dns, '>= 1.15'
 
     default_settings :aws_access_key => nil, :aws_secret_key => nil
 

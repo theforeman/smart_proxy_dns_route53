@@ -16,54 +16,31 @@ module Proxy::Dns::Route53
       super(nil, ttl)
     end
 
-    def create_a_record(fqdn, ip)
-      if found = dns_find(fqdn)
-        raise(Proxy::Dns::Collision, "#{fqdn} is already used by #{ip}") unless found == ip
-      else
-        zone = get_zone(fqdn)
-        new_record = Route53::DNSRecord.new(fqdn, 'A', ttl, [ip], zone)
-        resp = new_record.create
-        raise "AWS Response Error: #{resp}" if resp.error?
-        true
-      end
+    def do_create(name, value, type)
+      name += '.'
+      value += '.' if ['PTR', 'CNAME'].include?(type)
+
+      zone = get_zone(name)
+      new_record = Route53::DNSRecord.new(name, type, ttl, [value], zone)
+      resp = new_record.create
+      raise "AWS Response Error: #{resp}" if resp.error?
+      true
     end
 
-    def create_ptr_record(fqdn, ip)
-      if found = dns_find(ip)
-        raise(Proxy::Dns::Collision, "#{ip} is already used by #{found}") unless found == fqdn
-      else
-        zone = get_zone(ip)
-        new_record = Route53::DNSRecord.new(ip, 'PTR', ttl, [fqdn], zone)
-        resp = new_record.create
-        raise "AWS Response Error: #{resp}" if resp.error?
-        true
-      end
-    end
+    def do_remove(name, type)
+      name += '.'
 
-    def remove_a_record(fqdn)
-      zone = get_zone(fqdn)
+      zone = get_zone(name)
       recordset = zone.get_records
-      recordset.each do |rec|
-        if rec.name == fqdn + '.'
-          resp = rec.delete
-          raise "AWS Response Error: #{resp}" if resp.error?
-          return true
-        end
-      end
-      raise Proxy::Dns::NotFound, "Could not find forward record #{fqdn}"
-    end
+      records = recordset.select {|rec| rec.name == name && rec.type == type}
+      raise Proxy::Dns::NotFound.new("Could not find record '#{name}' of type #{type}") if records.empty?
 
-    def remove_ptr_record(ip)
-      zone = get_zone(ip)
-      recordset = zone.get_records
-      recordset.each do |rec|
-        if rec.name == ip + '.'
-          resp = rec.delete
-          raise "AWS Response Error: #{resp}" if resp.error?
-          return true
-        end
+      records.each do |rec|
+        resp = rec.delete
+        raise "AWS Response Error: #{resp}" if resp.error?
       end
-      raise Proxy::Dns::NotFound, "Could not find reverse record #{ip}"
+
+      true
     end
 
     private
@@ -77,7 +54,7 @@ module Proxy::Dns::Route53
     end
 
     def get_zone(fqdn)
-      domain = fqdn.split('.', 2).last + '.'
+      domain = fqdn.split('.', 2).last
       conn.get_zones(domain)[0]
     end
   end
