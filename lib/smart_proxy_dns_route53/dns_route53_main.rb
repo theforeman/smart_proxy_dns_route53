@@ -10,10 +10,10 @@ module Proxy::Dns::Route53
 
     attr_reader :aws_access_key, :aws_secret_key
 
-    def initialize(a_server = nil, a_ttl = nil)
-      @aws_access_key = Proxy::Dns::Route53::Plugin.settings.aws_access_key
-      @aws_secret_key = Proxy::Dns::Route53::Plugin.settings.aws_secret_key
-      super(a_server, a_ttl || ::Proxy::Dns::Plugin.settings.dns_ttl)
+    def initialize(aws_access_key, aws_secret_key, ttl = nil)
+      @aws_access_key = aws_access_key
+      @aws_secret_key = aws_secret_key
+      super(nil, ttl)
     end
 
     def create_a_record(fqdn, ip)
