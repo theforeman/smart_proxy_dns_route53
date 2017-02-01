@@ -12,7 +12,8 @@ for how to install Smart Proxy plugins
 | Smart Proxy Version | Plugin Version |
 | ------------------- | --------------:|
 | >= 1.10, < 1.11     | ~> 1.0         |
-| >= 1.11             | ~> 2.0         |
+| >= 1.11, < 1.13     | ~> 2.0         |
+| >= 1.13, < 1.15     | ~> 3.0         |
 
 ## Configuration
 
