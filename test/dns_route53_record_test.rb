@@ -8,67 +8,77 @@ class DnsRoute53RecordTest < Test::Unit::TestCase
     @provider = Proxy::Dns::Route53::Record.new('foo', 'bar', 86400)
   end
 
+  # Test that correct initialization works
   def test_provider_initialization
     assert_equal 'foo', @provider.aws_access_key
     assert_equal 'bar', @provider.aws_secret_key
     assert_equal 86400, @provider.ttl
   end
 
-  def test_do_create_success
+  # Test A record creation
+  def test_create_a
+    @provider.expects(:dns_find).returns(false)
+
     zone = mock()
-    @provider.expects(:get_zone).with('test.example.com.').returns(zone)
+    @provider.expects(:get_zone).with('test.example.com').returns(zone)
 
     dnsrecord = mock(:create => mock(:error? => false))
-    Route53::DNSRecord.expects(:new).with('test.example.com.', 'A', 86400, ['10.1.2.3'], zone).returns(dnsrecord)
+    Route53::DNSRecord.expects(:new).with('test.example.com', 'A', 86400, ['10.1.1.1'], zone).returns(dnsrecord)
 
-    assert @provider.do_create('test.example.com', '10.1.2.3', 'A')
+    assert @provider.create_a_record(fqdn, ip)
   end
 
-  def test_do_create_failure
+  # Test A record creation fails if the record exists
+  def test_create_a_conflict
+    @provider.expects(:dns_find).returns('10.2.2.2')
+    assert_raise(Proxy::Dns::Collision) { @provider.create_a_record(fqdn, ip) }
+  end
+
+  # Test PTR record creation
+  def test_create_ptr
+    @provider.expects(:dns_find).returns(false)
+
     zone = mock()
-    @provider.expects(:get_zone).with('test.example.com.').returns(zone)
+    @provider.expects(:get_zone).with('10.1.1.1').returns(zone)
 
-    dnsrecord = mock(:create => mock(:error? => true))
-    Route53::DNSRecord.expects(:new).with('test.example.com.', 'A', 86400, ['10.1.2.3'], zone).returns(dnsrecord)
+    dnsrecord = mock(:create => mock(:error? => false))
+    Route53::DNSRecord.expects(:new).with('10.1.1.1', 'PTR', 86400, ['test.example.com'], zone).returns(dnsrecord)
 
-    assert_raise RuntimeError do
-      @provider.do_create('test.example.com', '10.1.2.3', 'A')
-    end
+    assert @provider.create_ptr_record(fqdn, ip)
   end
 
-	def test_remove_not_found
-    records = []
-    @provider.expects(:get_zone).with('test.example.com.').returns(mock(:get_records => records))
-		assert_raise ::Proxy::Dns::NotFound do
-      @provider.do_remove('test.example.com', 'A')
-    end
-	end
+  # Test PTR record creation fails if the record exists
+  def test_create_ptr_conflict
+    @provider.expects(:dns_find).returns('else.example.com')
+    assert_raise(Proxy::Dns::Collision) { @provider.create_ptr_record(fqdn, ip) }
+  end
 
-	def test_remove_ignores_incorrect_records
-    records = [
-      mock(:name => 'test.example.com.', :type => 'AAAA'),
-      mock(:name => 'other.example.com.')
-    ]
-    @provider.expects(:get_zone).with('test.example.com.').returns(mock(:get_records => records))
-		assert_raise ::Proxy::Dns::NotFound do
-      @provider.do_remove('test.example.com', 'A')
-    end
-	end
+  # Test A record removal
+  def test_remove_a
+    zone = mock(:get_records => [mock(:name => 'test.example.com.', :delete => mock(:error? => false))])
+    @provider.expects(:get_zone).with('test.example.com').returns(zone)
+    assert @provider.remove_a_record(fqdn)
+  end
 
-	def test_remove_single_record
-    records = [mock(:name => 'test.example.com.', :type => 'A', :delete => mock(:error? => false))]
-    @provider.expects(:get_zone).with('test.example.com.').returns(mock(:get_records => records))
-    assert @provider.do_remove('test.example.com', 'A')
-	end
+  # Test A record removal fails if the record doesn't exist
+  def test_remove_a_not_found
+    @provider.expects(:get_zone).with('test.example.com').returns(mock(:get_records => []))
+    assert_raise(Proxy::Dns::NotFound) { assert @provider.remove_a_record(fqdn) }
+  end
 
-	def test_remove_multiple_records
-    records = [
-      mock(:name => 'test.example.com.', :type => 'A', :delete => mock(:error? => false)),
-      mock(:name => 'test.example.com.', :type => 'A', :delete => mock(:error? => false))
-    ]
-    @provider.expects(:get_zone).with('test.example.com.').returns(mock(:get_records => records))
-    assert @provider.do_remove('test.example.com', 'A')
-	end
+  # Test PTR record removal
+  def test_remove_ptr
+    # FIXME: record name seems incorrect for rDNS
+    zone = mock(:get_records => [mock(:name => '10.1.1.1.', :delete => mock(:error? => false))])
+    @provider.expects(:get_zone).with('10.1.1.1').returns(zone)
+    assert @provider.remove_ptr_record(ip)
+  end
+
+  # Test PTR record removal fails if the record doesn't exist
+  def test_remove_ptr_not_found
+    @provider.expects(:get_zone).with('10.1.1.1').returns(mock(:get_records => []))
+    assert_raise(Proxy::Dns::NotFound) { assert @provider.remove_ptr_record(ip) }
+  end
 
   def test_get_zone_forward
     zone = stub(:name => 'example.com.')
@@ -97,5 +107,15 @@ class DnsRoute53RecordTest < Test::Unit::TestCase
     conn = mock(:get_zones => [other, zone])
     @provider.expects(:conn).returns(conn)
     assert_equal zone, @provider.send(:get_zone, 'host.sub.example.com.')
+  end
+
+  private
+
+  def fqdn
+    'test.example.com'
+  end
+
+  def ip
+    '10.1.1.1'
   end
 end
