@@ -16,7 +16,7 @@ Gem::Specification.new do |s|
   s.files       = Dir['{config,lib,bundler.d}/**/*'] + ['README.md', 'LICENSE']
   s.test_files  = Dir['test/**/*']
 
-  s.add_dependency 'route53'
+  s.add_dependency 'route53', '>= 0.4.0'
 
   s.add_development_dependency('rake', '< 11')
   s.add_development_dependency('mocha')

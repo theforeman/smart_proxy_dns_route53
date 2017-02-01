@@ -91,11 +91,9 @@ class DnsRoute53RecordTest < Test::Unit::TestCase
     assert_equal zone, @provider.send(:get_zone, '1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.8.b.d.0.1.0.0.2.ip6.arpa.')
   end
 
-  def test_get_zone_longest_match
-    zone = stub(:name => 'sub.example.com.')
-    other = stub(:name => 'example.com.')
-    conn = mock(:get_zones => [other, zone])
+  def test_get_zone_unknown
+    conn = mock(:get_zones => nil)
     @provider.expects(:conn).returns(conn)
-    assert_equal zone, @provider.send(:get_zone, 'host.sub.example.com.')
+    assert_raise(::Proxy::Dns::Error) { @provider.send(:get_zone, 'unknown.example.com.') }
   end
 end
