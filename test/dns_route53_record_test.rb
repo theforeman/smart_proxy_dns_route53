@@ -34,6 +34,25 @@ class DnsRoute53RecordTest < Test::Unit::TestCase
     assert_raise(Proxy::Dns::Collision) { @provider.create_a_record(fqdn, ip) }
   end
 
+  # Test AAAA record creation
+  def test_create_aaaaa
+    @provider.expects(:aaaa_record_conflicts).with('test.example.com', '2001:db8::1').returns(-1)
+
+    zone = mock()
+    @provider.expects(:get_zone).with('test.example.com').returns(zone)
+
+    dnsrecord = mock(:create => mock(:error? => false))
+    Route53::DNSRecord.expects(:new).with('test.example.com', 'AAAA', 86400, ['2001:db8::1'], zone).returns(dnsrecord)
+
+    assert @provider.create_aaaa_record(fqdn, '2001:db8::1')
+  end
+
+  # Test AAAA record creation fails if the record exists
+  def test_create_aaaa_conflict
+    @provider.expects(:aaaa_record_conflicts).with(fqdn, '2001:db8::1').returns(1)
+    assert_raise(Proxy::Dns::Collision) { @provider.create_aaaa_record(fqdn, '2001:db8::1') }
+  end
+
   # Test PTR record creation
   def test_create_ptr
     @provider.expects(:ptr_record_conflicts).with('test.example.com', '10.1.1.1').returns(false)
@@ -55,9 +74,22 @@ class DnsRoute53RecordTest < Test::Unit::TestCase
 
   # Test A record removal
   def test_remove_a
-    zone = mock(:get_records => [mock(:name => 'test.example.com.', :delete => mock(:error? => false))])
+    zone = mock(:get_records => [mock(:name => 'test.example.com.', :type => 'A', :delete => mock(:error? => false))])
     @provider.expects(:get_zone).with('test.example.com').returns(zone)
     assert @provider.remove_a_record(fqdn)
+  end
+
+  # Test A record removal fails if the record doesn't exist
+  def test_remove_a_not_found
+    @provider.expects(:get_zone).with('test.example.com').returns(mock(:get_records => []))
+    assert_raise(Proxy::Dns::NotFound) { assert @provider.remove_a_record(fqdn) }
+  end
+
+  # Test AAAA record removal
+  def test_remove_aaaa
+    zone = mock(:get_records => [mock(:name => 'test.example.com.', :type => 'AAAA', :delete => mock(:error? => false))])
+    @provider.expects(:get_zone).with('test.example.com').returns(zone)
+    assert @provider.remove_aaaa_record(fqdn)
   end
 
   # Test A record removal fails if the record doesn't exist

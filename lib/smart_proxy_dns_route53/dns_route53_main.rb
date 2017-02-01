@@ -31,6 +31,21 @@ module Proxy::Dns::Route53
       end
     end
 
+    def create_aaaa_record(fqdn, ip)
+      case aaaa_record_conflicts(fqdn, ip) #returns -1, 0, 1
+      when 1 then
+        raise(Proxy::Dns::Collision, "#{fqdn} is already used by #{ip}")
+      when 0 then
+        return nil
+      else
+        zone = get_zone(fqdn)
+        new_record = Route53::DNSRecord.new(fqdn, 'AAAA', ttl, [ip], zone)
+        resp = new_record.create
+        raise "AWS Response Error: #{resp}" if resp.error?
+        true
+      end
+    end
+
     def create_ptr_record(fqdn, ptr)
       case ptr_record_conflicts(fqdn, ptr_to_ip(ptr)) #returns -1, 0, 1
       when 1 then
@@ -50,7 +65,20 @@ module Proxy::Dns::Route53
       zone = get_zone(fqdn)
       recordset = zone.get_records
       recordset.each do |rec|
-        if rec.name == fqdn + '.'
+        if rec.name == fqdn + '.' && rec.type == 'A'
+          resp = rec.delete
+          raise "AWS Response Error: #{resp}" if resp.error?
+          return true
+        end
+      end
+      raise Proxy::Dns::NotFound, "Could not find forward record #{fqdn}"
+    end
+
+    def remove_aaaa_record(fqdn)
+      zone = get_zone(fqdn)
+      recordset = zone.get_records
+      recordset.each do |rec|
+        if rec.name == fqdn + '.' && rec.type == 'AAAA'
           resp = rec.delete
           raise "AWS Response Error: #{resp}" if resp.error?
           return true

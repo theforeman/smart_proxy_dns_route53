@@ -63,7 +63,6 @@ class DnsRoute53IntegrationTest < Test::Unit::TestCase
   end
 
   def test_create_aaaa_record
-    omit 'AAAA support not implemented'
     post '/', :fqdn => "test.#{forward_zone}", :value => '2001:db8::1', :type => 'AAAA'
     assert_equal 200, last_response.status
     assert_equal '2001:db8::1', record(forward_zone, "test.#{forward_zone}.", 'AAAA').ip
@@ -93,7 +92,6 @@ class DnsRoute53IntegrationTest < Test::Unit::TestCase
   end
 
   def test_delete_aaaa_record
-    omit 'AAAA support not implemented'
     create_record forward_zone, "test.#{forward_zone}.", 'AAAA', '3600', ['2001:db8::1']
     delete "/test.#{forward_zone}/AAAA"
     assert_equal 200, last_response.status
