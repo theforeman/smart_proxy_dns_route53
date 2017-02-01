@@ -27,9 +27,59 @@ Configuration options for this plugin are in `/etc/foreman-proxy/settings.d/dns_
 * `:aws_access_key: "ABCDEF123456"` - set to be the Access Key ID of the IAM account
 * `:aws_secret_key: "ABCDEF123456!@#$"` - set to be the Secret Access Key of the IAM account
 
+### IAM policy
+
+The IAM account must have the following actions associated via a policy:
+
+* `route53:ListHostedZones` (all resources)
+* `route53:ChangeResourceRecordSets` (on all zones being managed)
+* `route53:ListResourceRecordSets` (on all zones being managed)
+
+An example policy document follows:
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "Stmt1485852222000",
+            "Effect": "Allow",
+            "Action": [
+                "route53:ListHostedZones"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "Stmt1485852222001",
+            "Effect": "Allow",
+            "Action": [
+                "route53:ChangeResourceRecordSets",
+                "route53:ListResourceRecordSets"
+            ],
+            "Resource": [
+                "arn:aws:route53:::hostedzone/Z1HNC9XBMDGFH9",
+                "arn:aws:route53:::hostedzone/Z2MCBLVJI24XOO",
+                "arn:aws:route53:::hostedzone/Z5H8WZ62ARI5V"
+            ]
+        }
+    ]
+}
+```
+
 ## Contributing
 
 Fork and send a Pull Request. Thanks!
+
+### Integration test
+
+The integration test runs against the AWS Route 53 API, so requires IAM credentials. To run it locally, set up an IAM policy with actions described above, _plus_ the `route53:GetHostedZone` action.
+
+Three zones must also be set up - a forward, reverse IPv4 and reverse IPv6 zone. The names do not matter. *All records will be deleted* in these zones when running the test, so do not use the zones for any other purpose.
+
+Export the following environment variables:
+
+* `AWS_ACCESS_KEY`, `AWS_SECRET_KEY` - per regular plugin configuration
+* `AWS_FORWARD_ZONE`, `AWS_REVERSE_V4_ZONE`, `AWS_REVERSE_V6_ZONE` - zone names that will be under complete control of the test suite
 
 ## Copyright
 
