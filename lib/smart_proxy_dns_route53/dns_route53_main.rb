@@ -54,13 +54,9 @@ module Proxy::Dns::Route53
     end
 
     def get_zone(name)
-      zones = conn.get_zones
-      name_arr = name.split('.')
-      (1 ... name_arr.size).each do |i|
-        search_domain = name_arr.last(name_arr.size - i).join('.') + "."
-        zone_select = zones.select { |z| z.name == search_domain }
-        return zone_select.first if zone_select.any?
-      end
+      zones = conn.get_zones(name)
+      raise Proxy::Dns::Error.new("Could not find zone for '#{name}'") if zones.nil? or zones.empty?
+      zones.first
     end
   end
 end

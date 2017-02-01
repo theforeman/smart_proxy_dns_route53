@@ -70,32 +70,27 @@ class DnsRoute53RecordTest < Test::Unit::TestCase
     assert @provider.do_remove('test.example.com', 'A')
 	end
 
-  def test_get_zone_forward
+  def test_get_zone
     zone = stub(:name => 'example.com.')
     conn = mock(:get_zones => [zone])
     @provider.expects(:conn).returns(conn)
     assert_equal zone, @provider.send(:get_zone, 'test.example.com.')
   end
 
-  def test_get_zone_reverse
-    zone = stub(:name => '2.1.10.in-addr.arpa.')
-    conn = mock(:get_zones => [zone])
+  def test_get_zone_raises_exception_on_empty
+    conn = mock(:get_zones => [])
     @provider.expects(:conn).returns(conn)
-    assert_equal zone, @provider.send(:get_zone, '3.2.1.10.in-addr.arpa.')
+		assert_raise ::Proxy::Dns::Error do
+      @provider.send(:get_zone, 'test.example.com.')
+    end
   end
 
-  def test_get_zone_reverse_v6
-    zone = stub(:name => '8.b.d.0.1.0.0.2.ip6.arpa.')
-    conn = mock(:get_zones => [zone])
+  def test_get_zone_raises_exception_on_nil
+    conn = mock(:get_zones => nil)
     @provider.expects(:conn).returns(conn)
-    assert_equal zone, @provider.send(:get_zone, '1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.8.b.d.0.1.0.0.2.ip6.arpa.')
-  end
 
-  def test_get_zone_longest_match
-    zone = stub(:name => 'sub.example.com.')
-    other = stub(:name => 'example.com.')
-    conn = mock(:get_zones => [other, zone])
-    @provider.expects(:conn).returns(conn)
-    assert_equal zone, @provider.send(:get_zone, 'host.sub.example.com.')
+		assert_raise ::Proxy::Dns::Error do
+      @provider.send(:get_zone, 'test.example.com.')
+    end
   end
 end
