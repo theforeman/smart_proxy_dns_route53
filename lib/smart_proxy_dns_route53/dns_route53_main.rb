@@ -17,8 +17,11 @@ module Proxy::Dns::Route53
     end
 
     def create_a_record(fqdn, ip)
-      if found = dns_find(fqdn)
-        raise(Proxy::Dns::Collision, "#{fqdn} is already used by #{ip}") unless found == ip
+      case a_record_conflicts(fqdn, ip) #returns -1, 0, 1
+      when 1 then
+        raise(Proxy::Dns::Collision, "#{fqdn} is already used by #{ip}")
+      when 0 then
+        return nil
       else
         zone = get_zone(fqdn)
         new_record = Route53::DNSRecord.new(fqdn, 'A', ttl, [ip], zone)
@@ -28,12 +31,15 @@ module Proxy::Dns::Route53
       end
     end
 
-    def create_ptr_record(fqdn, ip)
-      if found = dns_find(ip)
-        raise(Proxy::Dns::Collision, "#{ip} is already used by #{found}") unless found == fqdn
+    def create_ptr_record(fqdn, ptr)
+      case ptr_record_conflicts(fqdn, ptr_to_ip(ptr)) #returns -1, 0, 1
+      when 1 then
+        raise(Proxy::Dns::Collision, "#{ptr} is already in use")
+      when 0 then
+        return nil
       else
-        zone = get_zone(ip)
-        new_record = Route53::DNSRecord.new(ip, 'PTR', ttl, [fqdn], zone)
+        zone = get_zone(ptr)
+        new_record = Route53::DNSRecord.new(ptr, 'PTR', ttl, [fqdn], zone)
         resp = new_record.create
         raise "AWS Response Error: #{resp}" if resp.error?
         true

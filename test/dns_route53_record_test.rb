@@ -17,7 +17,7 @@ class DnsRoute53RecordTest < Test::Unit::TestCase
 
   # Test A record creation
   def test_create_a
-    @provider.expects(:dns_find).returns(false)
+    @provider.expects(:a_record_conflicts).with('test.example.com', '10.1.1.1').returns(-1)
 
     zone = mock()
     @provider.expects(:get_zone).with('test.example.com').returns(zone)
@@ -30,27 +30,27 @@ class DnsRoute53RecordTest < Test::Unit::TestCase
 
   # Test A record creation fails if the record exists
   def test_create_a_conflict
-    @provider.expects(:dns_find).returns('10.2.2.2')
+    @provider.expects(:a_record_conflicts).with(fqdn, ip).returns(1)
     assert_raise(Proxy::Dns::Collision) { @provider.create_a_record(fqdn, ip) }
   end
 
   # Test PTR record creation
   def test_create_ptr
-    @provider.expects(:dns_find).returns(false)
+    @provider.expects(:ptr_record_conflicts).with('test.example.com', '10.1.1.1').returns(false)
 
     zone = mock()
-    @provider.expects(:get_zone).with('10.1.1.1').returns(zone)
+    @provider.expects(:get_zone).with('1.1.1.10.in-addr.arpa').returns(zone)
 
     dnsrecord = mock(:create => mock(:error? => false))
-    Route53::DNSRecord.expects(:new).with('10.1.1.1', 'PTR', 86400, ['test.example.com'], zone).returns(dnsrecord)
+    Route53::DNSRecord.expects(:new).with('1.1.1.10.in-addr.arpa', 'PTR', 86400, ['test.example.com'], zone).returns(dnsrecord)
 
-    assert @provider.create_ptr_record(fqdn, ip)
+    assert @provider.create_ptr_record(fqdn, '1.1.1.10.in-addr.arpa')
   end
 
   # Test PTR record creation fails if the record exists
   def test_create_ptr_conflict
-    @provider.expects(:dns_find).returns('else.example.com')
-    assert_raise(Proxy::Dns::Collision) { @provider.create_ptr_record(fqdn, ip) }
+    @provider.expects(:ptr_record_conflicts).with('test.example.com', '10.1.1.1').returns(1)
+    assert_raise(Proxy::Dns::Collision) { @provider.create_ptr_record(fqdn, '1.1.1.10.in-addr.arpa') }
   end
 
   # Test A record removal
