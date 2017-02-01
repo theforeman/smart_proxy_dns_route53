@@ -49,20 +49,21 @@ class DnsRoute53IntegrationTest < Test::Unit::TestCase
   end
 
   def test_create_ptr_v4_record
-    post '/', :fqdn => "test.#{forward_zone}", :value => "33.#{reverse_v4_zone}", :type => 'PTR'
+    post '/', :fqdn => "test.#{forward_zone}.", :value => "33.#{reverse_v4_zone}", :type => 'PTR'
     assert_equal 200, last_response.status
     assert_equal "test.#{forward_zone}.", record(reverse_v4_zone, "33.#{reverse_v4_zone}.", 'PTR').fqdn
     assert_equal 'PTR', @record.type
   end
 
   def test_create_ptr_v6_record
-    post '/', :fqdn => "test.#{forward_zone}", :value => "1.#{reverse_v6_zone(true)}", :type => 'PTR'
+    post '/', :fqdn => "test.#{forward_zone}.", :value => "1.#{reverse_v6_zone(true)}", :type => 'PTR'
     assert_equal 200, last_response.status
     assert_equal "test.#{forward_zone}.", record(reverse_v6_zone, "1.#{reverse_v6_zone(true)}.", 'PTR').fqdn
     assert_equal 'PTR', @record.type
   end
 
   def test_create_aaaa_record
+    omit 'AAAA support not implemented'
     post '/', :fqdn => "test.#{forward_zone}", :value => '2001:db8::1', :type => 'AAAA'
     assert_equal 200, last_response.status
     assert_equal '2001:db8::1', record(forward_zone, "test.#{forward_zone}.", 'AAAA').ip
@@ -70,6 +71,7 @@ class DnsRoute53IntegrationTest < Test::Unit::TestCase
   end
 
   def test_create_cname_record
+    omit 'CNAME support not implemented'
     post '/', :fqdn => "test.#{forward_zone}", :value => 'test1.com', :type => 'CNAME'
     assert_equal 200, last_response.status
     assert_equal 'test1.com.', record(forward_zone, "test.#{forward_zone}.", 'CNAME').fqdn
@@ -91,6 +93,7 @@ class DnsRoute53IntegrationTest < Test::Unit::TestCase
   end
 
   def test_delete_aaaa_record
+    omit 'AAAA support not implemented'
     create_record forward_zone, "test.#{forward_zone}.", 'AAAA', '3600', ['2001:db8::1']
     delete "/test.#{forward_zone}/AAAA"
     assert_equal 200, last_response.status
@@ -98,6 +101,7 @@ class DnsRoute53IntegrationTest < Test::Unit::TestCase
   end
 
   def test_delete_explicit_cname_record
+    omit 'CNAME support not implemented'
     create_record forward_zone, "test.#{forward_zone}.", 'CNAME', '3600', ['test.example.com.']
     delete "/test.#{forward_zone}/CNAME"
     assert_equal 200, last_response.status
