@@ -1,7 +1,7 @@
 module ::Proxy::Dns::Route53
   class PluginConfiguration
     def load_classes
-      require 'smart_proxy_dns_plugin_template/dns_plugin_template_main'
+      require 'smart_proxy_dns_route53/dns_route53_main'
     end
 
     def load_dependency_injection_wirings(container_instance, settings)
