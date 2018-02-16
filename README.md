@@ -1,5 +1,7 @@
 # Route 53 smart proxy plugin
 
+[![Build Status](https://travis-ci.org/theforeman/smart_proxy_dns_route53.svg?branch=master)](https://travis-ci.org/theforeman/smart_proxy_dns_route53)
+
 This plugin adds a new DNS provider for managing records in Amazon's Route 53 service.
 
 ## Installation
