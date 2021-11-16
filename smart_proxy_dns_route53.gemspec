@@ -18,7 +18,7 @@ Gem::Specification.new do |s|
 
   s.add_dependency 'route53', '>= 0.4.0'
 
-  s.add_development_dependency('rake', '< 11')
+  s.add_development_dependency('rake', '~> 13.0')
   s.add_development_dependency('mocha')
   s.add_development_dependency('test-unit')
   s.add_development_dependency('rack-test')
